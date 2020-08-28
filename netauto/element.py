@@ -6,10 +6,20 @@ from clr import System
 from expanded_clr import get_wrapper_class
 from expanded_clr.utils import is_python_name, python_name_to_csharp_name
 
+from .utils import classproperty
+
 
 class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
     PATTERNS = dict()
     PROPERTIES = defaultdict(dict)
+
+    @classproperty
+    def desktop(cls):
+        return cls.RootElement
+
+    @classproperty
+    def focused(cls):
+        return cls.FocusedElement
 
     @property
     def supported_properties(self):
@@ -21,6 +31,14 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
     def supported_patterns(self):
         supported_patterns = set(self.instance.GetSupportedPatterns())
         return {k: v for k, v in self.PATTERNS.items() if v in supported_patterns}
+
+    @classproperty
+    def desktop(cls):
+        return cls.RootElement
+
+    @classproperty
+    def focused(cls):
+        return cls.FocusedElement
 
     def __getattr__(self, name):
         csharp_name = python_name_to_csharp_name(name)
@@ -40,7 +58,8 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
 
 # region Define Element things..
-Element.desktop = Element.root_element
+# I don't know why, but if we don't get Element.RootElement, then all the LookupByIds will always return None!
+Element.root_element
 
 for id_ in range(10000, 11000):
     pat = System.Windows.Automation.AutomationPattern.LookupById(id_)
