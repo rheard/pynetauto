@@ -6,6 +6,7 @@ from . import element
 
 
 class PropertyCondition(get_wrapper_class(System.Windows.Automation.PropertyCondition)):
+    """This is not to be used directly, and only provides for wrapper methods and serves the Condition wrapper."""
     def __or__(self, other):
         return OrCondition([self.instance, getattr(other, 'instance', other)])
 
@@ -14,6 +15,7 @@ class PropertyCondition(get_wrapper_class(System.Windows.Automation.PropertyCond
 
 
 class AndCondition(get_wrapper_class(System.Windows.Automation.AndCondition)):
+    """This is not to be used directly, and only provides for wrapper methods and serves the Condition wrapper."""
     def __or__(self, other):
         return OrCondition([self.instance, getattr(other, 'instance', other)])
 
@@ -22,6 +24,7 @@ class AndCondition(get_wrapper_class(System.Windows.Automation.AndCondition)):
 
 
 class OrCondition(get_wrapper_class(System.Windows.Automation.OrCondition)):
+    """This is not to be used directly, and only provides for wrapper methods and serves the Condition wrapper."""
     def __or__(self, other):
         return OrCondition([self.instance, getattr(other, 'instance', other)])
 
@@ -30,6 +33,30 @@ class OrCondition(get_wrapper_class(System.Windows.Automation.OrCondition)):
 
 
 class Condition(get_wrapper_class(System.Windows.Automation.Condition)):
+    """
+    A Condition wrapper, similar to Django's Q object.
+
+    Allows for us to define arbitrary conditions to search for. Note that the find methods will call this, so this
+        is only needed for more complex logic.
+
+    Args:
+        args: Any existing Condition objects.
+        kwargs: Allow for PropertyConditions. For example, to find Elements named "Untitled - Notepad":
+            Condition(name="Untitled - Notepad")
+
+    Notes:
+        If no arguments are provided, a Condition.true is returned. Condition.false is also available.
+        If multiple arguments or keyword arguments are provided, they will be ANDed together.
+
+        There are some property names that have duplicate property IDs. For example, Condition(is_read_only=True)
+            is ambiguous (and unpredictable), since both RangeValue and Value patterns provide for is_read_only,
+            and we will use the first ID we find.
+
+            To avoid this issue, you can optionally provide the pattern name in a similar fashion to a Django JOIN.
+            For is_read_only RangeValues: Condition(range_value__is_read_only=True)
+            For is_read_only Values: Condition(value__is_read_only=True)
+            For is_read_only either: Condition(value__is_read_only=True) | Condition(range_value__is_read_only=True)
+    """
     def __new__(cls, *args, instance=None, **kwargs):
         if instance is not None:
             # We were given an instance. This must be the TrueCondition or something. Just wrap it...
