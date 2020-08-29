@@ -32,14 +32,6 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
         supported_patterns = set(self.instance.GetSupportedPatterns())
         return {k: v for k, v in self.PATTERNS.items() if v in supported_patterns}
 
-    @classproperty
-    def desktop(cls):
-        return cls.RootElement
-
-    @classproperty
-    def focused(cls):
-        return cls.FocusedElement
-
     def __getattr__(self, name):
         csharp_name = python_name_to_csharp_name(name)
         for _, supported_properties in self.supported_properties.items():
