@@ -22,7 +22,7 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
         for _, supported_properties in self.supported_properties.items():
             for supported_property_name, supported_property in supported_properties.items():
                 if supported_property_name == csharp_name:
-                    return self.instance.GetCurrentPropertyValue(supported_property)
+                    return ValueConverter.to_python(self.instance.GetCurrentPropertyValue(supported_property))
 
         # Well we didn't find a property... Lets look for a method, on one of the supported patterns
         for supported_pattern_name, supported_pattern in self.supported_patterns.items():
