@@ -27,9 +27,9 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
         # Well we didn't find a property... Lets look for a method, on one of the supported patterns
         for supported_pattern_name, supported_pattern in self.supported_patterns.items():
             if supported_pattern_name != 'AutomationElementIdentifiers':
-                found_prop = getattr(self.instance.GetCurrentPattern(supported_pattern), csharp_name, None)
-                if found_prop is not None:
-                    return found_prop
+                this_pattern = self.instance.GetCurrentPattern(supported_pattern)
+                if hasattr(this_pattern, csharp_name):
+                    return ValueConverter.to_python(getattr(this_pattern, csharp_name))
 
         return super(Element, self).__getattr__(name)
 
@@ -121,7 +121,7 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
         while dt.datetime.now() < timeout or min_searches > 0:
             element = self.instance.FindFirst(scope, getattr(cond, 'instance', cond))
 
-            if element:
+            if element is not None:
                 return Element(instance=element)
 
             min_searches -= 1
@@ -165,6 +165,10 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
             min_searches -= 1
 
         return ValueConverter.to_python(elements)
+
+    @property
+    def clickable_point(self):
+        return self.get_clickable_point()
 
 
 # region Define Element things..
