@@ -2,7 +2,7 @@ import os
 
 from unittest import TestCase
 
-from netauto import Element, TreeScope
+from netauto import Condition as C, Element, TreeScope, WindowVisualState
 
 
 class CalculatorTestCase(TestCase):
@@ -26,12 +26,30 @@ class WindowTests(CalculatorTestCase):
         self.calculator.find_element(automation_id="Close", is_invoke=True).invoke()
         self.assertTrue(self.calculator.wait_unavailable(timeout=5))
 
-    def test_maximize_button(self):
-        self.assertNotEqual(self.calculator.window_visual_state, 1)
-        self.calculator.find_element(automation_id="Maximize", is_invoke=True).invoke()
-        # On maximizing, the button we just clicked will change to a restore button. Wait for it...
-        self.calculator.find_element(automation_id="Restore", is_invoke=True, timeout=5)
-        self.assertEqual(self.calculator.window_visual_state, 1)
+    def test_maximize_button(self, run_again=True):
+        """
+        Test that invoking the maximize/restore button will maximize/normalize the window.
+
+        Args:
+            run_again (bool): Run this test once more? This is an internal function. Running once will change the
+                maximized state. Running again will change it back.
+        """
+        button = self.calculator.find_element(C(name="Maximize Calculator") | C(name="Restore Calculator"),
+                                              is_invoke=True)
+
+        if "Maximize" in button.name:
+            self.assertEqual(self.calculator.window_visual_state, WindowVisualState.Normal)
+            button.invoke()
+            self.calculator.find_element(name="Restore Calculator", is_invoke=True, timeout=5)
+            self.assertEqual(self.calculator.window_visual_state, WindowVisualState.Maximized)
+        else:
+            self.assertEqual(self.calculator.window_visual_state, WindowVisualState.Maximized)
+            button.invoke()
+            self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5)
+            self.assertEqual(self.calculator.window_visual_state, WindowVisualState.Normal)
+
+        if run_again:
+            self.test_maximize_button(run_again=False)
 
 
 class BasicMath(CalculatorTestCase):
