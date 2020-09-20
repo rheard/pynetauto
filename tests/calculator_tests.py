@@ -51,6 +51,15 @@ class WindowTests(CalculatorTestCase):
         if run_again:
             self.test_maximize_button(run_again=False)
 
+    def test_setting_visual_state(self):
+        """Test that the visual state property acts like a property we can set."""
+        self.calculator.window_visual_state = WindowVisualState.Normal
+        self.assertTrue(bool(self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5)))
+        self.calculator.window_visual_state = WindowVisualState.Maximized
+        self.assertTrue(bool(self.calculator.find_element(name="Restore Calculator", is_invoke=True, timeout=5)))
+        self.calculator.window_visual_state = WindowVisualState.Normal
+        self.assertTrue(bool(self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5)))
+
 
 class BasicMath(CalculatorTestCase):
     """Just attempt to do some basic math with the calculator..."""

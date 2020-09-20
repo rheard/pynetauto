@@ -170,6 +170,14 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
     def clickable_point(self):
         return self.get_clickable_point()
 
+    @property
+    def window_visual_state(self):
+        return self.instance.GetCurrentPattern(self.supported_patterns['Window']).WindowVisualState
+
+    @window_visual_state.setter
+    def window_visual_state(self, val):
+        return self.instance.GetCurrentPattern(self.supported_patterns['Window']).SetWindowVisualState(val)
+
 
 # region Define Element things..
 # I don't know why, but if we don't get Element.root_element, then all the LookupByIds will always return None!
