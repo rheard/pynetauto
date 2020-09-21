@@ -126,3 +126,79 @@ class ScientificCalculatorTestCase(CalculatorTestCase):
             f"Display is {math.factorial(10):,}",
         )
 
+
+class ProgrammerCalculatorTestCase(CalculatorTestCase):
+    """Ensure that the Programmer calculator is open for the start of the test."""
+    def setUp(self):
+        super(ProgrammerCalculatorTestCase, self).setUp()
+        self.calculator_mode = "Programmer"
+
+    @property
+    def radix(self):
+        return self.calculator.find_elements(
+            class_name="RadioButton", is_selected=True,
+        ).automation_id.replace('Button', '')
+
+    @radix.setter
+    def radix(self, value):
+        automation_id = f"{value.lower()}Button"
+        radix_button = self.calculator.find_element(automation_id=automation_id)
+        if not radix_button.is_selected:
+            radix_button.select()
+            self.calculator.find_element(automation_id=automation_id, is_selected=True, timeout=2)
+
+    def test_base_conversion(self):
+        """Convert 10 to different bases..."""
+        self.radix = "decimal"
+        test_num = 10
+        self.enter_number(test_num)
+        # Note that hex, oct and bin all have a space at the end. Decimal does not.
+        self.assertEqual(
+            self.calculator.find_element(automation_id="hexButton").name,
+            f'HexaDecimal {test_num:X} '
+        )
+        self.assertEqual(
+            self.calculator.find_element(automation_id="decimalButton").name,
+            f'Decimal {test_num}'
+        )
+        # The following two will have a space between each character. So convert to the target using an f-string,
+        #   then use " ".join, all inside of an f-string. Its f-string-ception.
+        self.assertEqual(
+            self.calculator.find_element(automation_id="octolButton").name,  # Note the typo...
+            f'Octal {" ".join(f"{test_num:o}")} '
+        )
+        self.assertEqual(
+            self.calculator.find_element(automation_id="binaryButton").name,
+            f'Binary {" ".join(f"{test_num:b}")} '
+        )
+
+    def test_left_shift(self):
+        """Compute 10 << 2"""
+        self.radix = "decimal"
+        test_num = 10
+        test_shift = 2
+        self.enter_number(test_num)
+        self.calculator.find_element(automation_id='lshButton').invoke()
+        self.enter_number(test_shift)
+        self.calculator.find_element(automation_id='equalButton').invoke()
+        self.assertEqual(
+            self.calculator.find_element(automation_id="CalculatorResults").name,
+            f"Display is {test_num << test_shift}",
+        )
+
+    def test_numbers_disabled_by_base(self):
+        """Test that when we change to a base, only the numbers in that base are available to click"""
+        all_numbers = '0123456789abcdef'
+        test_data = {
+            'hex': all_numbers,
+            'decimal': '0123456789',
+            'octol': '01234567',
+            'binary': '01',
+        }
+
+        for test_radix, supposed_available_numbers in test_data.items():
+            self.radix = test_radix
+            for digit in all_numbers:
+                automation_id = f"num{digit}Button" if digit.isdecimal() else f"{digit}Button"
+                this_button = self.calculator.find_element(automation_id=automation_id, is_invoke=True)
+                self.assertEqual(this_button.is_enabled, digit in supposed_available_numbers)
