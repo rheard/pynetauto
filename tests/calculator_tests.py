@@ -1,5 +1,6 @@
 import math
 import os
+import string
 
 from unittest import TestCase
 
@@ -188,11 +189,11 @@ class ProgrammerCalculatorTestCase(CalculatorTestCase):
 
     def test_numbers_disabled_by_base(self):
         """Test that when we change to a base, only the numbers in that base are available to click"""
-        all_numbers = '0123456789abcdef'
+        all_numbers = set(string.hexdigits.lower())
         test_data = {
             'hex': all_numbers,
-            'decimal': '0123456789',
-            'octol': '01234567',
+            'decimal': string.digits,
+            'octol': string.octdigits,
             'binary': '01',
         }
 
