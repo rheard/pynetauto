@@ -212,3 +212,9 @@ for prop_name, prop in list(Element.PROPERTIES.get('AutomationElementIdentifiers
     if prop_name.endswith('PatternAvailable'):
         Element.PROPERTIES['AutomationElementIdentifiers'][prop_name[:-16]] = prop
 # endregion
+
+
+class TextRange(get_wrapper_class(System.Windows.Automation.Text.TextPatternRange)):
+    @property
+    def text(self):
+        return self.get_text(-1)
