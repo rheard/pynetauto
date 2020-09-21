@@ -66,7 +66,7 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
     def parent(self):
         return Element(instance=System.Windows.Automation.TreeWalker.RawViewWalker.GetParent(self.instance))
 
-    def wait_unavailable(self, timeout=30):
+    def wait_unavailable(self, timeout=30, include_offscreen=True):
         """Wait for this element to become unavailable."""
         if timeout == float('inf'):
             timeout = dt.datetime.max
@@ -78,6 +78,9 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
         try:
             while dt.datetime.now() < timeout:
                 self.process_id
+
+                if include_offscreen and self.is_offscreen:
+                    return True
 
             return False
         except System.Windows.Automation.ElementNotAvailableException:
