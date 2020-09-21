@@ -15,6 +15,24 @@ class CalculatorTestCase(TestCase):
             timeout=5, min_searches=2, scope=TreeScope.Children,
         )
 
+    @property
+    def calculator_mode(self):
+        return self.calculator.find_element(automation_id="Header", is_text=True).document_range.text
+
+    @calculator_mode.setter
+    def calculator_mode(self, value):
+        if self.calculator_mode != value:
+            pane_root = self.calculator.find_element(automation_id="PaneRoot", is_offscreen=False)
+            if not pane_root:
+                # The mode selector pane is not open. Open it.
+                self.calculator.find_element(automation_id="TogglePaneButton", is_invoke=True).invoke()
+                pane_root = self.calculator.find_element(automation_id="PaneRoot", timeout=5, min_searches=2,
+                                                         is_offscreen=False)
+
+            # Now that the pane is open, lets click the mode we want...
+            pane_root.find_element(automation_id=value, is_invoke=True).invoke()
+            pane_root.wait_unavailable(timeout=5)
+
     def tearDown(self):
         """If the calculator is left open, we want to close it"""
         os.system("taskkill /f /im calculator.exe")
@@ -61,8 +79,12 @@ class WindowTests(CalculatorTestCase):
         self.assertTrue(bool(self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5)))
 
 
-class BasicMath(CalculatorTestCase):
-    """Just attempt to do some basic math with the calculator..."""
+class StandardCalculatorTestCase(CalculatorTestCase):
+    """Ensure that the Standard calculator is open for the start of the test."""
+    def setUp(self):
+        super(StandardCalculatorTestCase, self).setUp()
+        self.calculator_mode = "Standard"
+
     def test_one_plus_one_is_two(self):
         one_button = self.calculator.find_element(automation_id="num1Button")
         one_button.invoke()
