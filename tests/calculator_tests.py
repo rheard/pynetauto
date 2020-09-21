@@ -34,6 +34,12 @@ class CalculatorTestCase(TestCase):
             pane_root.find_element(automation_id=value, is_invoke=True).invoke()
             pane_root.wait_unavailable(timeout=5)
 
+    def enter_number(self, number):
+        """Enter a number. Will not clear."""
+        number = str(number)
+        for digit in number:
+            self.calculator.find_element(automation_id=f"num{digit}Button").invoke()
+
     def tearDown(self):
         """If the calculator is left open, we want to close it"""
         os.system("taskkill /f /im calculator.exe")
@@ -87,10 +93,9 @@ class StandardCalculatorTestCase(CalculatorTestCase):
         self.calculator_mode = "Standard"
 
     def test_one_plus_one_is_two(self):
-        one_button = self.calculator.find_element(automation_id="num1Button")
-        one_button.invoke()
+        self.enter_number(1)
         self.calculator.find_element(automation_id='plusButton').invoke()
-        one_button.invoke()
+        self.enter_number(1)
         self.calculator.find_element(automation_id='equalButton').invoke()
         self.assertEqual(
             self.calculator.find_element(automation_id="CalculatorResults").name,
@@ -98,7 +103,7 @@ class StandardCalculatorTestCase(CalculatorTestCase):
         )
 
     def test_five_squared(self):
-        self.calculator.find_element(automation_id="num5Button").invoke()
+        self.enter_number(5)
         self.calculator.find_element(automation_id='xpower2Button').invoke()
         self.assertEqual(
             self.calculator.find_element(automation_id="CalculatorResults").name,
@@ -113,8 +118,8 @@ class ScientificCalculatorTestCase(CalculatorTestCase):
         self.calculator_mode = "Scientific"
 
     def test_ten_factorial(self):
-        self.calculator.find_element(automation_id="num1Button").invoke()
-        self.calculator.find_element(automation_id="num0Button").invoke()
+        """Compute 10!"""
+        self.enter_number(10)
         self.calculator.find_element(automation_id="factorialButton").invoke()
         self.assertEqual(
             self.calculator.find_element(automation_id="CalculatorResults").name,
