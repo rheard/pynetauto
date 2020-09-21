@@ -1,3 +1,4 @@
+import math
 import os
 
 from unittest import TestCase
@@ -103,3 +104,20 @@ class StandardCalculatorTestCase(CalculatorTestCase):
             self.calculator.find_element(automation_id="CalculatorResults").name,
             "Display is 25",
         )
+
+
+class ScientificCalculatorTestCase(CalculatorTestCase):
+    """Ensure that the Scientific calculator is open for the start of the test."""
+    def setUp(self):
+        super(ScientificCalculatorTestCase, self).setUp()
+        self.calculator_mode = "Scientific"
+
+    def test_ten_factorial(self):
+        self.calculator.find_element(automation_id="num1Button").invoke()
+        self.calculator.find_element(automation_id="num0Button").invoke()
+        self.calculator.find_element(automation_id="factorialButton").invoke()
+        self.assertEqual(
+            self.calculator.find_element(automation_id="CalculatorResults").name,
+            f"Display is {math.factorial(10):,}",
+        )
+
