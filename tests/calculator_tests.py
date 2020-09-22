@@ -43,7 +43,15 @@ class CalculatorTestCase(TestCase):
             number = number[1:]
 
         for digit in number:
-            self.calculator.find_element(automation_id=f"num{digit}Button").invoke()
+            if digit.isdecimal():
+                automation_id = f"num{digit}Button"
+            elif digit == '.':
+                automation_id = "decimalSeparatorButton"
+            else:
+                # A-F hexadecimal
+                automation_id = f"{digit}Button"
+
+            self.calculator.find_element(automation_id=automation_id).invoke()
 
         if negative:
             self.calculator.find_element(automation_id="negateButton").invoke()
