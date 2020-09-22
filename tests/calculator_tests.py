@@ -1,10 +1,16 @@
+import logging
 import math
 import os
 import string
 
 from unittest import TestCase
 
-from netauto import Condition as C, Element, TreeScope, WindowVisualState
+from faker import Faker
+
+from netauto import Element, TreeScope, WindowVisualState
+
+faker = Faker()
+logger = logging.getLogger(__name__)
 
 
 class CalculatorTestCase(TestCase):
@@ -16,6 +22,7 @@ class CalculatorTestCase(TestCase):
             is_window=True,
             timeout=5, min_searches=2, scope=TreeScope.Children,
         )
+        self.assertIsNotNone(self.calculator)
 
     @property
     def calculator_mode(self):
@@ -61,11 +68,14 @@ class CalculatorTestCase(TestCase):
         os.system("taskkill /f /im calculator.exe")
 
 
-class WindowTests(CalculatorTestCase):
+class BasicTests(CalculatorTestCase):
+    """Basic tests that aren't actually Calculator specific"""
+
     def test_close_button(self):
         """Test that the close button works"""
         self.calculator.find_element(automation_id="Close", is_invoke=True).invoke()
-        self.assertTrue(self.calculator.wait_unavailable(timeout=5))
+        self.assertTrue(self.calculator.wait_unavailable(timeout=5),
+                        "The calculator is still available even after clicking close!")
 
     def test_maximize_button(self, run_again=True):
         """
@@ -75,15 +85,20 @@ class WindowTests(CalculatorTestCase):
             run_again (bool): Run this test once more? This is an internal function. Running once will change the
                 maximized state. Running again will change it back.
         """
-        button = self.calculator.find_element(C(name="Maximize Calculator") | C(name="Restore Calculator"),
-                                              is_invoke=True)
+        button = self.calculator.find_element(automation_id="Maximize", is_invoke=True)
+        logger.info("Button name: %s", button.name)
 
+        # An illusion here is that the `button.name` will change depending on if the window is maximized or not.
         if "Maximize" in button.name:
+            # If the button.name is "Maximize Calculator", then the window should NOT currently be maximized,
+            #   so maximize it, and wait for it to change...
             self.assertEqual(self.calculator.window_visual_state, WindowVisualState.Normal)
             button.invoke()
             self.calculator.find_element(name="Restore Calculator", is_invoke=True, timeout=5)
             self.assertEqual(self.calculator.window_visual_state, WindowVisualState.Maximized)
         else:
+            # If the button.name is "Restore Calculator", then the window should currently be maximized,
+            #   so un-maximize it, and wait for it to change...
             self.assertEqual(self.calculator.window_visual_state, WindowVisualState.Maximized)
             button.invoke()
             self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5)
@@ -95,56 +110,79 @@ class WindowTests(CalculatorTestCase):
     def test_setting_visual_state(self):
         """Test that the visual state property acts like a property we can set."""
         self.calculator.window_visual_state = WindowVisualState.Normal
-        self.assertTrue(bool(self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5)))
+        self.assertIsNotNone(self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5))
         self.calculator.window_visual_state = WindowVisualState.Maximized
-        self.assertTrue(bool(self.calculator.find_element(name="Restore Calculator", is_invoke=True, timeout=5)))
+        self.assertIsNotNone(self.calculator.find_element(name="Restore Calculator", is_invoke=True, timeout=5))
         self.calculator.window_visual_state = WindowVisualState.Normal
-        self.assertTrue(bool(self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5)))
+        self.assertIsNotNone(self.calculator.find_element(name="Maximize Calculator", is_invoke=True, timeout=5))
 
 
 class StandardCalculatorTestCase(CalculatorTestCase):
     """Ensure that the Standard calculator is open for the start of the test."""
+
     def setUp(self):
         super(StandardCalculatorTestCase, self).setUp()
         self.calculator_mode = "Standard"
 
-    def test_one_plus_one_is_two(self):
-        self.enter_number(1)
+    def test_plus_basic(self, negative=False):
+        """Test x + y == z with integers"""
+        x = faker.pyint(min_value=-9999 if negative else -0)
+        y = faker.pyint(min_value=-9999 if negative else -0)
+        z = x + y
+        self.enter_number(x)
         self.calculator.find_element(automation_id='plusButton').invoke()
-        self.enter_number(1)
+        self.enter_number(y)
         self.calculator.find_element(automation_id='equalButton').invoke()
         self.assertEqual(
             self.calculator.find_element(automation_id="CalculatorResults").name,
-            "Display is 2",
+            f"Display is {z:,}",
+            f"Equation: {x} + {y} = {z}",
         )
 
-    def test_five_squared(self):
-        self.enter_number(5)
+    def test_plus_negative(self):
+        """Test x + y == z with integers, that may be positive or negative"""
+        self.test_plus_basic(negative=True)
+
+    def test_square_basic(self, negative=False):
+        """Test n**2 with integers"""
+        n = faker.pyint(min_value=-9999 if negative else -0)
+        n_2 = n**2
+        self.enter_number(n)
         self.calculator.find_element(automation_id='xpower2Button').invoke()
         self.assertEqual(
             self.calculator.find_element(automation_id="CalculatorResults").name,
-            "Display is 25",
+            f"Display is {n_2:,}",
+            f"Equation: {n}**2 = {n_2}",
         )
+
+    def test_square_negative(self):
+        """Test n**2 with integers, that may be positive or negative"""
+        self.test_square_basic(negative=True)
 
 
 class ScientificCalculatorTestCase(CalculatorTestCase):
     """Ensure that the Scientific calculator is open for the start of the test."""
+
     def setUp(self):
         super(ScientificCalculatorTestCase, self).setUp()
         self.calculator_mode = "Scientific"
 
-    def test_ten_factorial(self):
-        """Compute 10!"""
-        self.enter_number(10)
+    def test_factorial(self):
+        """Compute n!"""
+        n = faker.pyint(max_value=20)  # If we go too big, it will use scientific notation
+        n_f = math.factorial(n)
+        self.enter_number(n)
         self.calculator.find_element(automation_id="factorialButton").invoke()
         self.assertEqual(
             self.calculator.find_element(automation_id="CalculatorResults").name,
-            f"Display is {math.factorial(10):,}",
+            f"Display is {n_f:,}",
+            f"{n}! = {n_f}",
         )
 
 
 class ProgrammerCalculatorTestCase(CalculatorTestCase):
     """Ensure that the Programmer calculator is open for the start of the test."""
+
     def setUp(self):
         super(ProgrammerCalculatorTestCase, self).setUp()
         self.calculator_mode = "Programmer"
@@ -164,28 +202,30 @@ class ProgrammerCalculatorTestCase(CalculatorTestCase):
             self.calculator.find_element(automation_id=automation_id, is_selected=True, timeout=2)
 
     def test_base_conversion(self):
-        """Convert 10 to different bases..."""
+        """Convert n to different bases..."""
         self.radix = "decimal"
-        test_num = 10
+        test_num = faker.pyint()
         self.enter_number(test_num)
         # Note that hex, oct and bin all have a space at the end. Decimal does not.
         self.assertEqual(
-            self.calculator.find_element(automation_id="hexButton").name,
-            f'HexaDecimal {test_num:X} '
+            self.calculator.find_element(automation_id="hexButton").name.split(' ', 1)[1].replace(' ', ''),
+            f'{test_num:X}', f"Value: {test_num}"
         )
         self.assertEqual(
-            self.calculator.find_element(automation_id="decimalButton").name,
-            f'Decimal {test_num}'
-        )
-        # The following two will have a space between each character. So convert to the target using an f-string,
-        #   then use " ".join, all inside of an f-string. Its f-string-ception.
-        self.assertEqual(
-            self.calculator.find_element(automation_id="octolButton").name,  # Note the typo...
-            f'Octal {" ".join(f"{test_num:o}")} '
+            self.calculator.find_element(automation_id="decimalButton").name.split(' ', 1)[1], f'{test_num:,}'
         )
         self.assertEqual(
-            self.calculator.find_element(automation_id="binaryButton").name,
-            f'Binary {" ".join(f"{test_num:b}")} '
+            # Note the typo...
+            self.calculator.find_element(
+                automation_id="octolButton"
+            ).name.split(' ', 1)[1].replace(' ', '').lstrip('0'),
+            f"{test_num:o}", f"Value: {test_num}"
+        )
+        self.assertEqual(
+            self.calculator.find_element(
+                automation_id="binaryButton"
+            ).name.split(' ', 1)[1].replace(' ', '').lstrip('0'),
+            f"{test_num:b}", f"Value: {test_num}"
         )
 
     def test_left_shift(self):
