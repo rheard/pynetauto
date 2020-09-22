@@ -19,11 +19,10 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
     def __getattr__(self, name):
         csharp_name = python_name_to_csharp_name(name)
-        # No need to get the `supported_properties` for regular properties, because all elements support these
-        #   whether they claim to or not.
-        supported_property = self.PROPERTIES['AutomationElementIdentifiers'].get(csharp_name)
-        if supported_property:
-            return ValueConverter.to_python(self.instance.GetCurrentPropertyValue(supported_property))
+        for supported_pattern, supported_properties in self.supported_properties.items():
+            supported_property = supported_properties.get(csharp_name)
+            if supported_property:
+                return ValueConverter.to_python(self.instance.GetCurrentPropertyValue(supported_property))
 
         # Well we didn't find a property... Lets look for a method, on one of the supported patterns
         for supported_pattern_name, supported_pattern in self.supported_patterns.items():
@@ -51,7 +50,13 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
     @property
     def supported_properties(self):
         supported_properties = set(self.instance.GetSupportedProperties())
-        ret = {k: {k1: v1 for k1, v1 in v.items() if v1 in supported_properties} for k, v in self.PROPERTIES.items()}
+
+        # Ignore the supported_properties for regular Element properties (AutomationElementIdentifiers).
+        #   All elements support these properties, whether they want to admit it or not.
+        ret = {k: {k1: v1 for k1, v1 in v.items() if v1 in supported_properties}
+               if k != 'AutomationElementIdentifiers' else v
+               for k, v in self.PROPERTIES.items()}
+
         return {k: v for k, v in ret.items() if v}  # Filter out patterns that have no supported props left
 
     @property
