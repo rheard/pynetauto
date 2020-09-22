@@ -19,10 +19,11 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
     def __getattr__(self, name):
         csharp_name = python_name_to_csharp_name(name)
-        for _, supported_properties in self.supported_properties.items():
-            for supported_property_name, supported_property in supported_properties.items():
-                if supported_property_name == csharp_name:
-                    return ValueConverter.to_python(self.instance.GetCurrentPropertyValue(supported_property))
+        # No need to get the `supported_properties` for regular properties, because all elements support these
+        #   whether they claim to or not.
+        supported_property = self.PROPERTIES['AutomationElementIdentifiers'].get(csharp_name)
+        if supported_property:
+            return ValueConverter.to_python(self.instance.GetCurrentPropertyValue(supported_property))
 
         # Well we didn't find a property... Lets look for a method, on one of the supported patterns
         for supported_pattern_name, supported_pattern in self.supported_patterns.items():
