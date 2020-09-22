@@ -38,8 +38,15 @@ class CalculatorTestCase(TestCase):
     def enter_number(self, number):
         """Enter a number. Will not clear."""
         number = str(number)
+        negative = number[0] == '-'
+        if negative:
+            number = number[1:]
+
         for digit in number:
             self.calculator.find_element(automation_id=f"num{digit}Button").invoke()
+
+        if negative:
+            self.calculator.find_element(automation_id="negateButton").invoke()
 
     def tearDown(self):
         """If the calculator is left open, we want to close it"""
