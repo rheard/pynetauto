@@ -6,6 +6,8 @@ Much of the usage comes from the .NET Automation documentation, however some con
     For instance, the pattern availability properties have been shortened with nicknames. Normally you would have to
     use `IsWindowPatternAvailable` to see if the window pattern is available, but `IsWindow` (and `is_window`) work
     just as well.
+    
+Inspect.exe (or UISpy) is a highly recommended resource while developing with this library.
 
 
 ### Entry Point
@@ -56,13 +58,13 @@ C(is_window=True) | C(is_invoke=True)
 There are instances where 2 patterns can share the same property, namely both the `RangeValue` and `Value` patterns
     provide `Value` property. This shouldn't be a problem when getting the property from an existing `Element` and
     is only a problem when searching or creating `Condition` objects.
-    
+
 To avoid this problem, the pattern name for properties can be provided explicitly. To find the `RangeValue` with
     a specific value: `Condition(range_value__value=5)`.
-    
-    
+
+
 ### Wait for Close
-After say closing a window, a user might want to wait until the window closes (or simply goes offscreen). To this end,
-    `Element.wait_unavailable` is provided with a default `timeout` of 30 seconds. An `include_offscreen` argument
-    is also provided which defaults to `True`, meaning that the `Element` going offscreen will consider it 
-    unavailable. If the `timeout` expires, `False` is returned, otherwise `True` is.
+After certain actions such as closing a window, a user might want to wait until the window closes 
+    (or simply goes offscreen). To this end, `Element.wait_unavailable` is provided with a default `timeout` of 
+    30 seconds. An `include_offscreen` argument is also provided which defaults to `True`, meaning that the `Element` 
+    going offscreen will consider it unavailable. If the `timeout` expires, `False` is returned, otherwise `True` is.
