@@ -159,6 +159,18 @@ class StandardCalculatorTestCase(CalculatorTestCase):
         """Test n**2 with integers, that may be positive or negative"""
         self.test_square_basic(negative=True)
 
+    def test_square_root(self):
+        """Test sqrt(n) with integers"""
+        n = faker.pyint()
+        n_2 = n**2
+        self.enter_number(n_2)
+        self.calculator.find_element(automation_id='squareRootButton').invoke()
+        self.assertEqual(
+            self.calculator.find_element(automation_id="CalculatorResults").name,
+            f"Display is {n:,}",
+            f"Equation: {n}**2 = {n_2}",
+        )
+
 
 class ScientificCalculatorTestCase(CalculatorTestCase):
     """Ensure that the Scientific calculator is open for the start of the test."""
