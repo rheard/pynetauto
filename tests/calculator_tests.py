@@ -191,6 +191,12 @@ class ScientificCalculatorTestCase(CalculatorTestCase):
             f"{n}! = {n_f}",
         )
 
+    test_plus_basic = StandardCalculatorTestCase.test_plus_basic
+    test_plus_negative = StandardCalculatorTestCase.test_plus_negative
+    test_square_basic = StandardCalculatorTestCase.test_square_basic
+    test_square_negative = StandardCalculatorTestCase.test_square_negative
+    test_square_root = StandardCalculatorTestCase.test_square_root
+
 
 class ProgrammerCalculatorTestCase(CalculatorTestCase):
     """Ensure that the Programmer calculator is open for the start of the test."""
