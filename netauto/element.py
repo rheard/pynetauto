@@ -72,6 +72,20 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
     def parent(self):
         return Element(instance=System.Windows.Automation.TreeWalker.RawViewWalker.GetParent(self.instance))
 
+    def send_keys(self, value):
+        """
+        Enter text through SendWait.
+
+        Notes:
+            If possible, avoid using this.
+
+            For instance, the ValuePattern should be available which has `set_value`.
+                Side note: The Notepad input document supports the value pattern according to the C APIs, but not
+                    according to the same C# APIs?
+        """
+        self.set_focus()
+        return System.Windows.Forms.SendKeys.SendWait(value)
+
     def wait_unavailable(self, timeout=30, include_offscreen=True):
         """Wait for this element to become unavailable."""
         if timeout == float('inf'):
