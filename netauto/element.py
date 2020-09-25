@@ -187,6 +187,14 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
     def window_visual_state(self, val):
         return self.instance.GetCurrentPattern(self.supported_patterns['Window']).SetWindowVisualState(val)
 
+    @property
+    def value(self):
+        return self.__getattr__('value')  # This should still work the same.
+
+    @value.setter
+    def value(self, val):
+        self.set_value(val)
+
 
 # region Define Element things..
 # I don't know why, but if we don't get Element.root_element, then all the LookupByIds will always return None!
