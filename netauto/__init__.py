@@ -14,6 +14,6 @@ from .condition import Condition
 
 
 def __getattr__(name):
-    """This module is also an entry point for items found in System.Windows.Forms.Application"""
+    """This module is also an entry point for items found in System.Windows.Automation"""
     name = python_name_to_csharp_name(name)
     return get_wrapper_class(getattr(System.Windows.Automation, name))
