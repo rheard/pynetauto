@@ -195,11 +195,11 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
     @property
     def window_visual_state(self):
-        return self.instance.GetCurrentPattern(self.supported_patterns['Window']).WindowVisualState
+        return self.__getattr__('window_visual_state')  # This should still work the same.
 
     @window_visual_state.setter
     def window_visual_state(self, val):
-        return self.instance.GetCurrentPattern(self.supported_patterns['Window']).SetWindowVisualState(val)
+        self.set_window_visual_state(val)
 
     @property
     def value(self):
