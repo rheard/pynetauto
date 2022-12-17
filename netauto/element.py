@@ -14,26 +14,46 @@ from .utils import classproperty
 
 
 class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
+    """
+    A wrapper class for System.Windows.Automation.AutomationElement that allows access to properties and methods
+        using Python naming conventions.
+    """
     PATTERNS = dict()
     PROPERTIES = defaultdict(dict)
 
     def __getattr__(self, name):
+        """
+        Override the attribute accessor to allow access to properties and methods using Python naming conventions.
+
+        Args:
+            name (str): The name of the attribute to access.
+
+        Returns:
+            The value of the attribute.
+        """
+        # Check if the attribute is a supported property of the Element
         csharp_name = python_name_to_csharp_name(name)
         for supported_pattern, supported_properties in self.supported_properties.items():
             supported_property = supported_properties.get(csharp_name)
             if supported_property:
+                # Return the value of the property using the ValueConverter to convert it to a Python object
                 return ValueConverter.to_python(self.instance.GetCurrentPropertyValue(supported_property))
 
-        # Well we didn't find a property... Lets look for a method, on one of the supported patterns
+        # The attribute was not a supported property, so check if it is a method of a supported pattern
         for supported_pattern_name, supported_pattern in self.supported_patterns.items():
             if supported_pattern_name != 'AutomationElementIdentifiers':
+                # Get the current pattern for the Element
                 this_pattern = self.instance.GetCurrentPattern(supported_pattern)
+                # Check if the pattern has the attribute as a method
                 if hasattr(this_pattern, csharp_name):
+                    # Return the value of the method using the ValueConverter to convert it to a Python object
                     return ValueConverter.to_python(getattr(this_pattern, csharp_name))
 
+        # If the attribute was not found, raise an AttributeError
         return super(Element, self).__getattr__(name)
 
     def __bool__(self):
+        """A way to check if the element is still "valid" and will continue to work"""
         try:
             return bool(self.process_id)
         except System.Windows.Automation.ElementNotAvailableException:
@@ -41,35 +61,52 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
     @classproperty
     def desktop(cls):
+        """Gets the root element, ie, the desktop"""
         return cls.RootElement
 
     @classproperty
     def focused(cls):
+        """Gets the current focused element"""
         return cls.FocusedElement
 
     @property
     def supported_properties(self):
+        """
+        Get a dictionary of the supported properties for the Element, grouped by pattern.
+
+        Returns:
+            dict: A dictionary of the supported properties for the Element, grouped by pattern.
+        """
+        # Get the set of supported properties for the Element
         supported_properties = set(self.instance.GetSupportedProperties())
 
-        # Ignore the supported_properties for regular Element properties (AutomationElementIdentifiers).
-        #   All elements support these properties, whether they want to admit it or not.
+        # Filter out the properties for the AutomationElementIdentifiers pattern, as all elements support these
+        #   properties whether they want to admit it or not
         ret = {k: {k1: v1 for k1, v1 in v.items() if v1 in supported_properties}
                if k != 'AutomationElementIdentifiers' else v
                for k, v in self.PROPERTIES.items()}
 
-        return {k: v for k, v in ret.items() if v}  # Filter out patterns that have no supported props left
+        # Filter out patterns that have no supported properties left
+        return {k: v for k, v in ret.items() if v}
 
     @property
     def supported_patterns(self):
+        """Get a dictionary of the supported patterns for the Element."""
+        # Get the set of supported patterns for the Element
         supported_patterns = set(self.instance.GetSupportedPatterns())
+
+        # Filter out patterns that are not supported by the Element
         return {k: v for k, v in self.PATTERNS.items() if v in supported_patterns}
 
     @property
     def children(self):
+        """Get a list of the immediate children of the Element."""
         return self.find_elements(scope=System.Windows.Automation.TreeScope.Children)
 
     @property
     def parent(self):
+        """Get the parent of the Element."""
+        # Get the parent of the Element using the RawViewWalker and the `GetParent` method
         return Element(instance=System.Windows.Automation.TreeWalker.RawViewWalker.GetParent(self.instance))
 
     def send_keys(self, value):
@@ -86,8 +123,21 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
         self.set_focus()
         return System.Windows.Forms.SendKeys.SendWait(value)
 
-    def wait_unavailable(self, timeout=30, include_offscreen=True):
-        """Wait for this element to become unavailable."""
+    def wait_unavailable(self, timeout=float("int"), include_offscreen=True):
+        """
+        Wait for the Element to become unavailable.
+
+        Args:
+            timeout (int, float, datetime.timedelta, optional): The maximum amount of time to wait for the Element
+                to become unavailable. Can be specified as an integer or float representing the number of seconds to
+                wait, or as a datetime.timedelta object. Defaults to infinity.
+            include_offscreen (bool, optional): Whether to consider the Element as unavailable if it is offscreen.
+                Defaults to True.
+
+        Returns:
+            bool: True if the Element became unavailable within the specified timeout, False otherwise.
+        """
+        # Convert the timeout to a datetime object
         if timeout == float('inf'):
             timeout = dt.datetime.max
         elif isinstance(timeout, dt.timedelta):
@@ -96,14 +146,19 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
             timeout = dt.datetime.now() + dt.timedelta(seconds=timeout)
 
         try:
+            # Keep checking the availability of the Element until the timeout is reached
             while dt.datetime.now() < timeout:
+                # Check the process_id property of the Element to see if it is available
                 self.process_id
 
+                # If the Element is offscreen and we are including offscreen Elements as unavailable, return True
                 if include_offscreen and self.is_offscreen:
                     return True
 
+            # The timeout was reached without the Element becoming unavailable
             return False
         except System.Windows.Automation.ElementNotAvailableException:
+            # The Element became unavailable before the timeout was reached
             return True
 
     def find_element(self, *args, timeout=0, min_searches=1, scope=System.Windows.Automation.TreeScope.Descendants,
@@ -191,6 +246,7 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
     @property
     def clickable_point(self):
+        """A property alias for the get_clickable_point method"""
         return self.get_clickable_point()
 
     @property
@@ -199,6 +255,7 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
     @window_visual_state.setter
     def window_visual_state(self, val):
+        """A property alias for the set_window_visual_state method"""
         self.set_window_visual_state(val)
 
     @property
@@ -207,6 +264,7 @@ class Element(get_wrapper_class(System.Windows.Automation.AutomationElement)):
 
     @value.setter
     def value(self, val):
+        """A property alias for the set_value method"""
         self.set_value(val)
 
 
